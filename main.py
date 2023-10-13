@@ -1,31 +1,42 @@
-# ************************************
-# Python Snake
-# ************************************
-from tkinter import *
+import tkinter as tk
+from tkinter import simpledialog  # Import the simpledialog module separately
 import random
 
-# Define global variables
+# Global constants
 GAME_WIDTH = 1500
 GAME_HEIGHT = 1000
 SPEED = 100
-SPACE_SIZE = 50
+SPACE_SIZE = 20
 BODY_PARTS = 3
 SNAKE_COLOR = "#00FF00"
 FOOD_COLOR = "#FF0000"
 BACKGROUND_COLOR = "#000000"
 
-# Define the window as a global variable
-window = Tk()
-window.title("Snake game")
+# Initialize the main window
+window = tk.Tk()
+window.title("Snake Game")
 
-# Define the snake, food, score, and direction as global variables
+# Create global variables for the game
 snake = None
 food = None
-score = 0 
-direction = 'down' 
+score = 0
+direction = 'right'
 
+# Create the leaderboard
+leaderboard = []
+
+# Create the game canvas
+canvas = tk.Canvas(window, bg=BACKGROUND_COLOR,
+                   height=GAME_HEIGHT, width=GAME_WIDTH)
+canvas.pack()
+
+# Create the game label
+label = tk.Label(window, text="Score: {}".format(score), font=('consolas', 20))
+label.pack()
+
+
+# Define the Snake class
 class Snake:
-
     def __init__(self):
         self.body_size = BODY_PARTS
         self.coordinates = []
@@ -39,11 +50,11 @@ class Snake:
                 x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR, tag="snake")
             self.squares.append(square)
 
+
+# Define the Food class
 class Food:
-
     def __init__(self):
-
-        x = random.randint(0, int((GAME_WIDTH / SPACE_SIZE)-1)) * SPACE_SIZE
+        x = random.randint(0, int((GAME_WIDTH / SPACE_SIZE) - 1)) * SPACE_SIZE
         y = random.randint(0, int((GAME_HEIGHT / SPACE_SIZE) - 1)) * SPACE_SIZE
 
         self.coordinates = [x, y]
@@ -51,8 +62,75 @@ class Food:
         canvas.create_oval(x, y, x + SPACE_SIZE, y +
                            SPACE_SIZE, fill=FOOD_COLOR, tag="food")
 
-def next_turn(snake, food):
 
+# Function to start the game
+def start_game():
+    global snake, food, score, direction
+
+    # Reset game variables
+    score = 0
+    direction = 'right'
+    label.config(text="Score: {}".format(score))
+    canvas.delete("all")
+
+    # Create a new snake and food
+    snake = Snake()
+    food = Food()
+
+    # Start the game loop
+    next_turn(snake, food)
+
+
+# Function to display the leaderboard
+def show_leaderboard():
+    # Create a new window for the leaderboard
+    leaderboard_window = tk.Toplevel(window)
+    leaderboard_window.title("Leaderboard")
+
+    # Read the leaderboard file and display the scores
+    with open("leaderboard.txt", "r") as leaderboard_file:
+        leaderboard_data = leaderboard_file.readlines()
+
+    leaderboard_data.sort(
+        key=lambda x: int(x.split(":")[1]), reverse=True)  # Sort by scores
+
+    leaderboard_text = "\n".join(leaderboard_data)
+
+    leaderboard_label = tk.Label(
+        leaderboard_window, text="Leaderboard", font=('consolas', 20))
+    leaderboard_label.pack()
+
+    leaderboard_text_widget = tk.Text(
+        leaderboard_window, font=('consolas', 12), height=10, width=30)
+    leaderboard_text_widget.insert(tk.END, leaderboard_text)
+    leaderboard_text_widget.pack()
+
+    # Create a button to go back to the main menu
+    back_button = tk.Button(
+        leaderboard_window, text="Back to Main Menu", command=leaderboard_window.destroy)
+    back_button.pack()
+
+
+# Function to handle game over
+def game_over():
+    canvas.delete("all")
+    canvas.create_text(GAME_WIDTH / 2, GAME_HEIGHT / 2,
+                       font=('consolas', 30), text="GAME OVER", fill="red")
+
+    # Ask the player for their name
+    player_name = tk.simpledialog.askstring(
+        "Enter your name", "Enter your name:")
+    if player_name:
+        # Open the leaderboard file in append mode and write the player's name and score
+        with open("leaderboard.txt", "a") as leaderboard_file:
+            leaderboard_file.write(f"{player_name}: {score}\n")
+
+        # Display the updated leaderboard
+        show_leaderboard()
+
+
+# Function to move the snake
+def next_turn(snake, food):
     x, y = snake.coordinates[0]
 
     if direction == "up":
@@ -72,36 +150,25 @@ def next_turn(snake, food):
     snake.squares.insert(0, square)
 
     if x == food.coordinates[0] and y == food.coordinates[1]:
-
         global score
-
         score += 1
-
-        label.config(text="Score:{}".format(score))
-
+        label.config(text="Score: {}".format(score))
         canvas.delete("food")
-
         food = Food()
-
     else:
-
         del snake.coordinates[-1]
-
         canvas.delete(snake.squares[-1])
-
         del snake.squares[-1]
 
     if check_collisions(snake):
         game_over()
-
     else:
         window.after(SPEED, next_turn, snake, food)
 
 
+# Function to change the snake's direction
 def change_direction(new_direction):
-
     global direction
-
     if new_direction == 'left':
         if direction != 'right':
             direction = new_direction
@@ -116,76 +183,49 @@ def change_direction(new_direction):
             direction = new_direction
 
 
+# Function to check for collisions
 def check_collisions(snake):
-
     x, y = snake.coordinates[0]
-
     if x < 0 or x >= GAME_WIDTH:
         return True
     elif y < 0 or y >= GAME_HEIGHT:
         return True
-
     for body_part in snake.coordinates[1:]:
         if x == body_part[0] and y == body_part[1]:
             return True
-
     return False
 
-def game_over():
-    canvas.delete(ALL)
-    canvas.create_text(canvas.winfo_width()/2, canvas.winfo_height()/2,
-                       font=('consolas', 70), text="GAME OVER", fill="red", tag="gameover")
 
-def restart_game():
-    global score, direction, snake, food
-
-    # Reset the score and direction
-    score = 0
-    direction = 'down'
-    label.config(text="Score:{}".format(score))
-
-    # Clear the canvas
-    canvas.delete(ALL)
-
-    # Create a new snake and food
-    snake = Snake()
-    food = Food()
-
-    # Start the game again
-    next_turn(snake, food)
-
-# Create a Restart button
-restart_button = Button(window, text="Restart", command=restart_game)
-restart_button.pack(side=BOTTOM, anchor=S, padx=10, pady=10, ipadx=10)
-
-label = Label(window, text="Score:{}".format(score), font=('consolas', 40))
-label.pack()
+# Function to handle keyboard input
+def on_arrow_key(event):
+    if event.keysym == "Up":
+        change_direction("up")
+    elif event.keysym == "Down":
+        change_direction("down")
+    elif event.keysym == "Left":
+        change_direction("left")
+    elif event.keysym == "Right":
+        change_direction("right")
 
 
-canvas = Canvas(window, bg=BACKGROUND_COLOR,
-                height=GAME_HEIGHT, width=GAME_WIDTH)
-canvas.pack()
+# Bind arrow keys to the on_arrow_key function
+window.bind("<Up>", on_arrow_key)
+window.bind("<Down>", on_arrow_key)
+window.bind("<Left>", on_arrow_key)
+window.bind("<Right>", on_arrow_key)
 
-window.update()
+# Create a button to start the game
+start_button = tk.Button(window, text="Start", command=start_game)
+start_button.pack(pady=10)
 
-window_width = window.winfo_width()
-window_height = window.winfo_height()
-screen_width = window.winfo_screenwidth()
-screen_height = window.winfo_screenheight()
+# Create a button to show the leaderboard
+leaderboard_button = tk.Button(
+    window, text="Leaderboard", command=show_leaderboard)
+leaderboard_button.pack(pady=10)
 
-x = int((screen_width/2) - (window_width/2))
-y = int((screen_height/2) - (window_height/2))
+# Create a button to exit the game
+exit_button = tk.Button(window, text="Exit", command=window.quit)
+exit_button.pack(pady=10)
 
-window.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-window.bind('<Left>', lambda event: change_direction('left'))
-window.bind('<Right>', lambda event: change_direction('right'))
-window.bind('<Up>', lambda event: change_direction('up'))
-window.bind('<Down>', lambda event: change_direction('down'))
-
-snake = Snake()
-food = Food()
-
-next_turn(snake, food)
-
+# Start the tkinter main loop
 window.mainloop()
