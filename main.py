@@ -16,6 +16,13 @@ BACKGROUND_COLOR = "#000000"
 window = tk.Tk()
 window.title("Snake Game")
 
+# Center the window on the screen
+window_width = window.winfo_reqwidth()
+window_height = window.winfo_reqheight()
+position_x = int((window.winfo_screenwidth() / 2) - (window_width / 2))
+position_y = int((window.winfo_screenheight() / 2) - (window_height / 2))
+window.geometry("+{}+{}".format(position_x, position_y))
+
 # Create global variables for the game
 snake = None
 food = None
@@ -118,7 +125,7 @@ def game_over():
                        font=('consolas', 30), text="GAME OVER", fill="red")
 
     # Ask the player for their name
-    player_name = tk.simpledialog.askstring(
+    player_name = simpledialog.askstring(
         "Enter your name", "Enter your name:")
     if player_name:
         # Open the leaderboard file in append mode and write the player's name and score
@@ -214,6 +221,31 @@ window.bind("<Down>", on_arrow_key)
 window.bind("<Left>", on_arrow_key)
 window.bind("<Right>", on_arrow_key)
 
+
+# Function to show the settings
+def show_settings():
+    global settings_window  # Make settings_window a global variable
+    settings_window = tk.Toplevel(window)
+    settings_window.title("Settings")
+
+    speed_label = tk.Label(
+        settings_window, text="Speed (ms):", font=('consolas', 14))
+    speed_label.pack()
+
+    speed_slider = tk.Scale(settings_window, from_=50, to=300, orient="horizontal")
+    speed_slider.set(SPEED)
+    speed_slider.pack()
+
+    apply_button = tk.Button(settings_window, text="Apply", command=lambda: apply_settings(speed_slider.get()))
+    apply_button.pack()
+
+# Function to apply the settings
+def apply_settings(new_speed):
+    global SPEED
+    SPEED = new_speed
+    settings_window.destroy()
+    start_game()
+
 # Create a button to start the game
 start_button = tk.Button(window, text="Start", command=start_game)
 start_button.pack(pady=10)
@@ -223,9 +255,9 @@ leaderboard_button = tk.Button(
     window, text="Leaderboard", command=show_leaderboard)
 leaderboard_button.pack(pady=10)
 
-# Create a button to exit the game
-exit_button = tk.Button(window, text="Exit", command=window.quit)
-exit_button.pack(pady=10)
+# Create a button to show the settings
+settings_button = tk.Button(window, text="Settings", command=show_settings)
+settings_button.pack(pady=10)
 
 # Start the tkinter main loop
 window.mainloop()
