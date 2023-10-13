@@ -1,15 +1,14 @@
 import tkinter as tk
 from tkinter import simpledialog  # Import the simpledialog module separately
+from tkinter.colorchooser import askcolor  # Import the colorchooser module
 import random
 
 # Global constants
-GAME_WIDTH = 1500
-GAME_HEIGHT = 1000
+GAME_WIDTH = 1000
+GAME_HEIGHT = 700
 SPEED = 100
 SPACE_SIZE = 20
 BODY_PARTS = 3
-SNAKE_COLOR = "#00FF00"
-FOOD_COLOR = "#FF0000"
 BACKGROUND_COLOR = "#000000"
 
 # Initialize the main window
@@ -28,6 +27,7 @@ snake = None
 food = None
 score = 0
 direction = 'right'
+snake_color = "#00FF00"  # Default snake color
 
 # Create the leaderboard
 leaderboard = []
@@ -54,7 +54,7 @@ class Snake:
 
         for x, y in self.coordinates:
             square = canvas.create_rectangle(
-                x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR, tag="snake")
+                x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=snake_color, tag="snake")
             self.squares.append(square)
 
 
@@ -67,7 +67,7 @@ class Food:
         self.coordinates = [x, y]
 
         canvas.create_oval(x, y, x + SPACE_SIZE, y +
-                           SPACE_SIZE, fill=FOOD_COLOR, tag="food")
+                           SPACE_SIZE, fill="#FF0000", tag="food")
 
 
 # Function to start the game
@@ -152,7 +152,7 @@ def next_turn(snake, food):
     snake.coordinates.insert(0, (x, y))
 
     square = canvas.create_rectangle(
-        x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR)
+        x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=snake_color)
 
     snake.squares.insert(0, square)
 
@@ -215,19 +215,13 @@ def on_arrow_key(event):
         change_direction("right")
 
 
-# Bind arrow keys to the on_arrow_key function
-window.bind("<Up>", on_arrow_key)
-window.bind("<Down>", on_arrow_key)
-window.bind("<Left>", on_arrow_key)
-window.bind("<Right>", on_arrow_key)
-
-
 # Function to show the settings
 def show_settings():
     global settings_window  # Make settings_window a global variable
     settings_window = tk.Toplevel(window)
     settings_window.title("Settings")
 
+    # Speed Slider
     speed_label = tk.Label(
         settings_window, text="Speed (ms):", font=('consolas', 14))
     speed_label.pack()
@@ -236,8 +230,20 @@ def show_settings():
     speed_slider.set(SPEED)
     speed_slider.pack()
 
+    # Snake Color Picker
+    def choose_snake_color():
+        global snake_color
+        color = askcolor(initialcolor=snake_color)[1]
+        if color:
+            snake_color = color
+
+    color_button = tk.Button(
+        settings_window, text="Choose Snake Color", command=choose_snake_color)
+    color_button.pack()
+
     apply_button = tk.Button(settings_window, text="Apply", command=lambda: apply_settings(speed_slider.get()))
     apply_button.pack()
+
 
 # Function to apply the settings
 def apply_settings(new_speed):
@@ -258,6 +264,12 @@ leaderboard_button.pack(pady=10)
 # Create a button to show the settings
 settings_button = tk.Button(window, text="Settings", command=show_settings)
 settings_button.pack(pady=10)
+
+# Bind arrow keys to the on_arrow_key function
+window.bind("<Up>", on_arrow_key)
+window.bind("<Down>", on_arrow_key)
+window.bind("<Left>", on_arrow_key)
+window.bind("<Right>", on_arrow_key)
 
 # Start the tkinter main loop
 window.mainloop()
